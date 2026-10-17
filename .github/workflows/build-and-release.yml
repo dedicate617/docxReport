@@ -1,0 +1,30 @@
+name: Cross-Platform Build & Release
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-dotnet:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [win-x86, win-x64, linux-x64, linux-arm, linux-arm64]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Publish ${{ matrix.rid }}
+        run: |
+          dotnet publish src/CrossReportRunner/CrossReportRunner.csproj \
+            -c Release -r ${{ matrix.rid }} --self-contained \
+            -p:PublishSingleFile=true -o dist/${{ matrix.rid }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CrossReportRunner-${{ matrix.rid }}
+          path: dist/${{ matrix.rid }}
