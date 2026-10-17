@@ -1,0 +1,17 @@
+stages:
+  - build
+  - test
+
+image: mcr.microsoft.com/dotnet/sdk:8.0
+
+build-all-platforms:
+  stage: build
+  parallel:
+    matrix:
+      - RID: [win-x86, win-x64, linux-x64, linux-arm, linux-arm64]
+  script:
+    - dotnet publish src/CrossReportRunner/CrossReportRunner.csproj -c Release -r $RID --self-contained -p:PublishSingleFile=true -o bin/$RID/
+  artifacts:
+    paths:
+      - bin/
+    expire_in: 1 week
