@@ -1,0 +1,9 @@
+{
+  "name": "univer-pdf-adapter",
+  "version": "1.0.0",
+  "description": "Headless Univer.ai Node.js DOCX to PDF converter adapter",
+  "main": "univer-convert.js",
+  "dependencies": {
+    "@univerjs/core": "^0.3.0"
+  }
+}
