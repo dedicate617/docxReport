@@ -19,6 +19,11 @@ public static class StreamSerializer
 
     public static void WriteFilePayload(CompactDataPayload payload, string jsonFilePath)
     {
+        var dir = Path.GetDirectoryName(jsonFilePath);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
         var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(jsonFilePath, json);
     }
