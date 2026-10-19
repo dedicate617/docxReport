@@ -57,7 +57,13 @@ def main():
     parser.add_argument("-f", "--pdfpath", default="", help="Output PDF destination path (optional)")
 
     args = parser.parse_args()
-    base_dir = Path(__file__).resolve().parent.parent.parent
+    if args.prjpath:
+        base_dir = Path(args.prjpath).resolve()
+    elif getattr(sys, "frozen", False) or hasattr(sys, "__compiled__"):
+        base_dir = Path(sys.executable).resolve().parent
+    else:
+        base_dir = Path(__file__).resolve().parent.parent.parent
+
 
     code = run_report_pipeline(
         base_dir=base_dir,

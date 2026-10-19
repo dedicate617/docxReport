@@ -3,7 +3,10 @@ import subprocess
 import gzip
 import json
 import os
+import sys
+import shutil
 from pathlib import Path
+
 
 class RunnerLauncher:
     @staticmethod
@@ -12,20 +15,24 @@ class RunnerLauncher:
         machine = platform.machine().lower()
 
         if system == "windows":
-            if "arm" in machine:
-                return base_dir / "bin" / "win-arm64" / "CrossReportRunner.exe"
-            elif "64" in machine:
-                # Check win-x64
-                candidate = base_dir / "bin" / "win-x64" / "CrossReportRunner.exe"
-                if candidate.exists():
-                    return candidate
-                # Check build output if bin/ isn't populated
-                dev_candidate = base_dir / "src" / "CrossReportRunner" / "bin" / "Debug" / "net8.0" / "win-x64" / "CrossReportRunner.exe"
-                if dev_candidate.exists():
-                    return dev_candidate
-                return candidate
-            else:
-                return base_dir / "bin" / "win-x86" / "CrossReportRunner.exe"
+            exe_dir = Path(sys.executable).resolve().parent
+            candidates = [
+                base_dir / "bin" / "win-x64" / "CrossReportRunner.exe",
+                base_dir / "CrossReportRunner.exe",
+                exe_dir / "bin" / "win-x64" / "CrossReportRunner.exe",
+                exe_dir / "CrossReportRunner.exe",
+                Path(__file__).resolve().parent / "bin" / "win-x64" / "CrossReportRunner.exe",
+                Path(__file__).resolve().parent.parent / "bin" / "win-x64" / "CrossReportRunner.exe",
+                Path(__file__).resolve().parent.parent.parent / "bin" / "win-x64" / "CrossReportRunner.exe",
+                base_dir / "src" / "CrossReportRunner" / "bin" / "Debug" / "net8.0" / "win-x64" / "CrossReportRunner.exe",
+            ]
+            for c in candidates:
+                if c.exists():
+                    return c
+            which_runner = shutil.which("CrossReportRunner.exe") or shutil.which("CrossReportRunner")
+            if which_runner:
+                return Path(which_runner)
+            return base_dir / "bin" / "win-x64" / "CrossReportRunner.exe"
         elif system == "linux":
             if "aarch64" in machine or "arm64" in machine:
                 return base_dir / "bin" / "linux-arm64" / "CrossReportRunner"

@@ -24,3 +24,8 @@ ENV/
 output/
 dist/
 build/
+*.build/
+*.dist/
+*.onefile-build/
+nuitka-crash-report.xml
+
