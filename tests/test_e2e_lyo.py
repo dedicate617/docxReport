@@ -54,3 +54,45 @@ def test_full_pipeline_with_sqlite(tmp_path):
     assert autogen_docx.exists()
     rendered_doc = Document(str(autogen_docx))
     assert "Product: TestProduct" in rendered_doc.paragraphs[0].text
+
+def test_full_pipeline_with_real_pdf_on_chrome(tmp_path):
+    if not PdfRouter.is_chrome_available():
+        pytest.skip("Chrome or Edge is not installed")
+
+    db_file = tmp_path / "mock_batch.db"
+    conn = sqlite3.connect(str(db_file))
+    conn.execute("CREATE TABLE LYO1_LYO_Header (ProjectNo TEXT, BatchNo TEXT, ProductName TEXT, RecipeName TEXT);")
+    conn.execute("INSERT INTO LYO1_LYO_Header VALUES ('P001', 'BATCH_001', 'TestProduct', 'RecipeA');")
+    conn.commit()
+    conn.close()
+
+    dsdef_file = tmp_path / "test.dsdef"
+    dsdef_file.write_text("""<Report><Tables><Table>
+<Name>LYO1_LYO_Header</Name><DataSource>LYO1</DataSource>
+<Sql>SELECT ProjectNo, BatchNo, ProductName, RecipeName FROM LYO1_LYO_Header WHERE BatchNo = '[%BatchNo%]'</Sql>
+<EnableSampling>False</EnableSampling>
+</Table></Tables></Report>""")
+
+    docx_file = tmp_path / "test.docx"
+    doc = Document()
+    doc.add_paragraph("Product: {{ LYO1_LYO_Header[0].ProductName }}")
+    doc.save(str(docx_file))
+
+    pdf_file = tmp_path / "out.pdf"
+
+    base_dir = Path(__file__).resolve().parent.parent
+    exit_code = run_report_pipeline(
+        base_dir=base_dir,
+        docxtpl=str(docx_file),
+        dsdef=str(dsdef_file),
+        dspara=f"DSName=LYO1;DBType=4;DBPath={db_file}",
+        vpara="BatchNo=BATCH_001",
+        pdfpath=str(pdf_file)
+    )
+
+    assert exit_code == 0
+    assert pdf_file.exists()
+    assert pdf_file.stat().st_size > 0
+    with open(pdf_file, "rb") as f:
+        assert f.read(5) == b"%PDF-"
+

@@ -27,17 +27,19 @@ def run_report_pipeline(base_dir: Path, docxtpl: str, dsdef: str, dspara: str, v
         DocxRenderer.render(docxtpl, context, str(autogen_docx), raw_payload=payload)
         print(f"[MindReport] Word report successfully generated: {autogen_docx}")
 
-        # Step 4: Convert to PDF (optional, Univer first, LibreOffice fallback)
+        # Step 4: Convert to PDF (priority: office > libreoffice > chrome)
         if pdfpath:
+            engine = PdfRouter.detect_engine()
+            print(f"[MindReport] Detected PDF rendering engine: {engine or 'none'} (Priority: office > libreoffice > chrome)")
             print(f"[MindReport] Converting to PDF {pdfpath}...")
             success = PdfRouter.convert_docx_to_pdf(autogen_docx, Path(pdfpath))
             if not success:
-                print(f"[MindReport Notice] Current machine has no PDF rendering engine (Word/WPS/LibreOffice).")
+                print(f"[MindReport Notice] Current machine has no available PDF rendering engine (Office/LibreOffice/Chrome).")
                 print(f"[MindReport Notice] The Word report is intact and fully populated at: {autogen_docx}")
-                print(f"[MindReport Notice] To enable PDF export on headless/office-free machines, install LibreOffice:")
-                print(f"  - Linux: sudo apt-get install libreoffice (or yum install libreoffice)")
-                print(f"  - Windows: download LibreOffice Portable or install LibreOffice")
+                print(f"[MindReport Notice] To enable PDF export on office-free machines, install Chrome, Edge, or LibreOffice.")
                 return 2
+            print(f"[MindReport] PDF successfully generated at: {pdfpath}")
+
 
         print("[MindReport] Report generation finished successfully.")
         return 0
